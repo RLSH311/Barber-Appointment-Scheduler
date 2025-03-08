@@ -1,0 +1,9 @@
+[project]
+name = "barber-appointment-scheduler"
+version = "0.1.0"
+dependencies = [
+]
+
+[tool.uv]
+dev-dependencies = [
+]
