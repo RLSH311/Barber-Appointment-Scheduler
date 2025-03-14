@@ -1,0 +1,8 @@
+# Ignore virtual environment
+.venv/
+
+# Ignore build artifacts
+build/
+
+# Ignore project package egg-info
+barber_appointment_scheduler.egg-info/
