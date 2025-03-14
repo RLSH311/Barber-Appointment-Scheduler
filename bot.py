@@ -1,24 +1,5 @@
-from typing import Final
-ACCESS_TOKEN: Final = "7822483945:AAGyZe1gf2cYxC-iNEyLhYBAU2ATL0iTqRI"
-
-
-#!/usr/bin/env python
-# pylint: disable=unused-argument
-# This program is dedicated to the public domain under the CC0 license.
-
-"""
-First, a few callback functions are defined. Then, those functions are passed to
-the Application and registered at their respective places.
-Then, the bot is started and runs until we press Ctrl-C on the command line.
-
-Usage:
-Example of a bot-user conversation using ConversationHandler.
-Send /start to initiate the conversation.
-Press Ctrl-C on the command line or send a signal to the process to stop the
-bot.
-"""
-
 import logging
+from typing import Final
 
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import (
@@ -30,6 +11,8 @@ from telegram.ext import (
     filters,
 )
 
+ACCESS_TOKEN: Final = "7822483945:AAGyZe1gf2cYxC-iNEyLhYBAU2ATL0iTqRI"
+
 # Enable logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -39,11 +22,9 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
-GENDER, PHOTO, LOCATION, BIO = range(4)
-
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Starts the conversation and asks the user about their gender."""
+    """Starts the conversation and ask the user for his email."""
     reply_keyboard = [["Boy", "Girl", "Other"]]
 
     await update.message.reply_text(
