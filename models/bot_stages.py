@@ -8,3 +8,4 @@ class BotStages(Enum):
     DAY_OF_THE_WEEK = 4
     START_HOUR = 5
     END_HOUR = 6
+    END = 7
