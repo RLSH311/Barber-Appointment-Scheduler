@@ -1,7 +1,7 @@
 import logging
 from typing import Final, Optional
 
-from models.bot_stages import BotStages
+from models.bot_steps import BotSteps
 from models.frequency import Frequency, FREQUENCIES, FREQUENCIES_REGEX, FREQUENCY_MAP_TO_HEBREW
 from models.day_of_the_week import DAYS_OF_THE_WEEKS, DAYS_OF_THE_WEEKS_REGEX, DAYS_MAP_TO_HEBREW
 
@@ -41,7 +41,7 @@ async def start_then_enter_email(update: Update, context: ContextTypes.DEFAULT_T
         "(עד שלא תכניס מייל תקין אני לא מתקדם) \n",
     )
 
-    return BotStages.FREQUENCY.value
+    return BotSteps.FREQUENCY.value
 
 
 async def set_email_then_enter_frequency(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -60,7 +60,7 @@ async def set_email_then_enter_frequency(update: Update, context: ContextTypes.D
         ),
     )
 
-    return BotStages.INTERVAL.value
+    return BotSteps.INTERVAL.value
 
 
 async def set_frequency_then_enter_interval(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -81,7 +81,7 @@ async def set_frequency_then_enter_interval(update: Update, context: ContextType
         "הכנס מספר בין 1 ל-10",
     )
 
-    return BotStages.DAY_OF_THE_WEEK.value
+    return BotSteps.DAY_OF_THE_WEEK.value
 
 
 # TODO: make the option to insert multiple answers
@@ -103,7 +103,7 @@ async def set_interval_then_enter_day_of_the_week(update: Update, context: Conte
     )
 
 
-    return BotStages.START_HOUR.value
+    return BotSteps.START_HOUR.value
 
 
 async def set_day_of_the_week_then_enter_start_hour(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -119,7 +119,7 @@ async def set_day_of_the_week_then_enter_start_hour(update: Update, context: Con
         "נתחיל מהטווח התחתון בפורמט הבא בלבד <HH:MM> ושעה תקנית",
     )
 
-    return BotStages.END_HOUR.value
+    return BotSteps.END_HOUR.value
 
 
 async def set_start_hour_then_enter_end_hour(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -137,7 +137,7 @@ async def set_start_hour_then_enter_end_hour(update: Update, context: ContextTyp
         parse_mode=ParseMode.MARKDOWN_V2
     )
 
-    return BotStages.END.value
+    return BotSteps.END.value
 
 async def set_end_hour_then_end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user: Optional[User] = update.message.from_user
@@ -177,12 +177,12 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start_then_enter_email)],
         states={
-            BotStages.FREQUENCY.value: [MessageHandler(filters.Regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"), set_email_then_enter_frequency)],
-            BotStages.INTERVAL.value: [MessageHandler(filters.Regex(FREQUENCIES_REGEX), set_frequency_then_enter_interval)],
-            BotStages.DAY_OF_THE_WEEK.value: [MessageHandler(filters.Regex("^([1-9]|10)$"), set_interval_then_enter_day_of_the_week)],
-            BotStages.START_HOUR.value: [MessageHandler(filters.Regex(DAYS_OF_THE_WEEKS_REGEX), set_day_of_the_week_then_enter_start_hour)],
-            BotStages.END_HOUR.value: [MessageHandler(filters.Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d$"), set_start_hour_then_enter_end_hour)],
-            BotStages.END.value: [MessageHandler(filters.Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d$"), set_end_hour_then_end)],
+            BotSteps.FREQUENCY.value: [MessageHandler(filters.Regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"), set_email_then_enter_frequency)],
+            BotSteps.INTERVAL.value: [MessageHandler(filters.Regex(FREQUENCIES_REGEX), set_frequency_then_enter_interval)],
+            BotSteps.DAY_OF_THE_WEEK.value: [MessageHandler(filters.Regex("^([1-9]|10)$"), set_interval_then_enter_day_of_the_week)],
+            BotSteps.START_HOUR.value: [MessageHandler(filters.Regex(DAYS_OF_THE_WEEKS_REGEX), set_day_of_the_week_then_enter_start_hour)],
+            BotSteps.END_HOUR.value: [MessageHandler(filters.Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d$"), set_start_hour_then_enter_end_hour)],
+            BotSteps.END.value: [MessageHandler(filters.Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d$"), set_end_hour_then_end)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )

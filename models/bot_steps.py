@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class BotStages(Enum):
+class BotSteps(Enum):
     EMAIL = 1
     FREQUENCY = 2
     INTERVAL = 3
