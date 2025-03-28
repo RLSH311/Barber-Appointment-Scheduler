@@ -2,11 +2,13 @@ import logging
 from typing import Final, Optional
 
 from models.bot_stages import BotStages
-from models.frequency import Frequency, FREQUENCIES, FREQUENCIES_REGEX
-from models.day_of_the_week import DayOfTheWeek, DAYS_OF_THE_WEEKS, DAYS_OF_THE_WEEKS_REGEX
+from models.frequency import Frequency, FREQUENCIES, FREQUENCIES_REGEX, FREQUENCY_MAP_TO_HEBREW
+from models.day_of_the_week import DAYS_OF_THE_WEEKS, DAYS_OF_THE_WEEKS_REGEX, DAYS_MAP_TO_HEBREW
 
 from telegram._user import User
+from telegram.helpers import escape_markdown
 
+from telegram.constants import ParseMode
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
 from telegram.ext import (
     Application,
@@ -43,20 +45,18 @@ async def start_then_enter_email(update: Update, context: ContextTypes.DEFAULT_T
 
 
 async def set_email_then_enter_frequency(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the selected gender and asks for a photo."""
     user: Optional[User] = update.message.from_user
     entered_email: str = update.message.text
 
-    reply_keyboard = [FREQUENCIES]
-    placeholder: str = " or ".join(FREQUENCIES) + "?"
+    placeholder: str = " or ".join(FREQUENCIES)
 
-    logger.info("Email of %s: %s", user.first_name, entered_email)
+    logger.info(f"Email of {user.first_name}: {entered_email}")
+
     await update.message.reply_text(
-        "תודה רבה אח שלנו 💪🏻 \n"
-        "עכשיו נוכל לעדכן אותך כשאנחנו מוצאים לך תור. \n"
+        "עכשיו נעדכן אותך כשנמצא לך תור 💪🏻 \n\n"
         "עכשיו תגיד, באיזו תדירות היית רוצה להסתפר?",
-        ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True, input_field_placeholder=placeholder
+        reply_markup=ReplyKeyboardMarkup(
+            keyboard=[FREQUENCIES], one_time_keyboard=True, input_field_placeholder=placeholder
         ),
     )
 
@@ -64,17 +64,21 @@ async def set_email_then_enter_frequency(update: Update, context: ContextTypes.D
 
 
 async def set_frequency_then_enter_interval(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the selected gender and asks for a photo."""
     user: Optional[User] = update.message.from_user
     entered_frequency: str = update.message.text
 
     logger.info("Frequency of %s: %s", user.first_name, entered_frequency)
     await update.message.reply_text(
-        "אוקי זה הצעד הראשון. עכשיו אשמח לדעת מה האינטרוול בו תרצה תור? \n"
-        f"לצורך העניין אם הכנסת שהתדירות שלך היא \"{Frequency.WEEKLY}\" ובחרת תדירות X אז יקבע לך תור אחת ל-X {Frequency.WEEKLY}",
-        ReplyKeyboardMarkup(
-            one_time_keyboard=True, input_field_placeholder="1 - 10"
-        ),
+        "אוקי זה הצעד הראשון. עכשיו אשמח לדעת מה האינטרוול בו תרצה תור?",
+        reply_markup=ReplyKeyboardRemove()
+    )
+
+    await update.message.reply_text(
+        f"לצורך העניין אם הכנסת שהתדירות שלך היא \"{Frequency.WEEKLY.name}\" ובחרת תדירות X אז יקבע לך תור אחת ל-X {FREQUENCY_MAP_TO_HEBREW[Frequency.WEEKLY]}",
+    )
+
+    await update.message.reply_text(
+        "הכנס מספר בין 1 ל-10",
     )
 
     return BotStages.DAY_OF_THE_WEEK.value
@@ -82,61 +86,71 @@ async def set_frequency_then_enter_interval(update: Update, context: ContextType
 
 # TODO: make the option to insert multiple answers
 async def set_interval_then_enter_day_of_the_week(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the selected gender and asks for a photo."""
     user: Optional[User] = update.message.from_user
     entered_frequency: str = update.message.text
     reply_keyboard = [DAYS_OF_THE_WEEKS]
+    placeholder: str = " or ".join(DAYS_OF_THE_WEEKS)
 
     logger.info("Interval of %s: %s", user.first_name, entered_frequency)
     await update.message.reply_text(
-        "אוקי אנחנו עוד מעט מסיימים נשמה שלי, רק ציין לי באילו ימים היית רוצה שאנסה למצוא לך תור? \n"
-        "אם תבחר כמה ימים, אבחר תור (יחיד) רנדומלי באחד מהימים הללו",
-        ReplyKeyboardMarkup(
-            reply_keyboard, one_time_keyboard=True
-        ),
+        "אוקי אנחנו עוד מעט מסיימים נשמה שלי, רק ציין לי באילו ימים היית רוצה שאנסה למצוא לך תור?",
+        reply_markup=ReplyKeyboardRemove()
     )
+    await update.message.reply_text(
+        "אמצא לך תורים לפי התדירות והאינטרוול שהזנת, אך ורק בימים שאתה מעוניין בהם",
+        reply_markup=ReplyKeyboardMarkup(
+            reply_keyboard, one_time_keyboard=True, input_field_placeholder=placeholder),
+    )
+
 
     return BotStages.START_HOUR.value
 
 
 async def set_day_of_the_week_then_enter_start_hour(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the selected gender and asks for a photo."""
     user: Optional[User] = update.message.from_user
     entered_day: str = update.message.text
 
     logger.info("Day of %s: %s", user.first_name, entered_day)
     await update.message.reply_text(
-        "אין לנו עוד הרבה שלבים כפרה עליך, אני רק צריך שתכניס את טווח השעות שתרצה לקבוע בהן תור."
-        "נתחיל מהטווח התחתון: <HH:MM>",
-        ReplyKeyboardMarkup(
-            one_time_keyboard=True, input_field_placeholder="<HH:MM>"
-        ),
+        "אין לנו עוד הרבה שלבים כפרה עליך, אני רק צריך שתכניס את טווח השעות שתרצה לקבוע בהן תור.",
+        reply_markup=ReplyKeyboardRemove()
+    )
+    await update.message.reply_text(
+        "נתחיל מהטווח התחתון בפורמט הבא בלבד <HH:MM> ושעה תקנית",
     )
 
     return BotStages.END_HOUR.value
 
 
 async def set_start_hour_then_enter_end_hour(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    """Stores the selected gender and asks for a photo."""
     user: Optional[User] = update.message.from_user
     entered_start_hour: str = update.message.text
 
     logger.info("Start Hour of %s: %s", user.first_name, entered_start_hour)
     await update.message.reply_text(
-        "זהו עכשיו רק את הטווח העליון וסיינו: <HH:MM>",
-        ReplyKeyboardMarkup(
-            one_time_keyboard=True, input_field_placeholder="<HH:MM>"
-        ),
+        "זהו עכשיו רק את הטווח העליון באותו פורמט (<HH:MM>) וסיימנו",
+    )
+    
+    await update.message.reply_text(
+        "__שים לב__ \n"
+        "ניתן להכניס שעות רק __עבור אותו יום__, לכן שעת הסיום חייבת להיות גדולה משעת ההתחלה",
+        parse_mode=ParseMode.MARKDOWN_V2
     )
 
     return BotStages.END.value
 
 async def set_end_hour_then_end(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Stores the selected gender and asks for a photo."""
     user: Optional[User] = update.message.from_user
     entered_start_hour: str = update.message.text
 
     logger.info("End Hour of %s: %s", user.first_name, entered_start_hour)
+
+    await update.message.reply_text(
+        "לסיכום: \n"
+        f"אקבע לך תור בין השעות {1}-{2} בכל יום {1} אחת ל-{1} {1} \n"
+        f"אני אודיע למייל {2}",
+        reply_markup=ReplyKeyboardRemove()
+    )
 
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -144,7 +158,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     user = update.message.from_user
     logger.info("User %s canceled the conversation.", user.first_name)
     await update.message.reply_text(
-        "Bye! I hope we can talk again some day.", reply_markup=ReplyKeyboardRemove()
+        "לא חייב לקבוע עכשיו, אפשר גם במועד אחר. פשוט תפנה אליי בפקודת /start", reply_markup=ReplyKeyboardRemove()
     )
 
     return ConversationHandler.END
@@ -163,12 +177,12 @@ def main() -> None:
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler("start", start_then_enter_email)],
         states={
-            BotStages.FREQUENCY.value: [MessageHandler(filters.Regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"), set_email_then_enter_frequency)],
+            BotStages.FREQUENCY.value: [MessageHandler(filters.Regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"), set_email_then_enter_frequency)],
             BotStages.INTERVAL.value: [MessageHandler(filters.Regex(FREQUENCIES_REGEX), set_frequency_then_enter_interval)],
             BotStages.DAY_OF_THE_WEEK.value: [MessageHandler(filters.Regex("^([1-9]|10)$"), set_interval_then_enter_day_of_the_week)],
             BotStages.START_HOUR.value: [MessageHandler(filters.Regex(DAYS_OF_THE_WEEKS_REGEX), set_day_of_the_week_then_enter_start_hour)],
-            BotStages.END_HOUR.value: [MessageHandler(filters.Regex("^(?:[01]\d|2[0-3]):[0-5]\d$"), set_start_hour_then_enter_end_hour)],
-            BotStages.END.value: [MessageHandler("^(?:[01]\d|2[0-3]):[0-5]\d$", set_end_hour_then_end)],
+            BotStages.END_HOUR.value: [MessageHandler(filters.Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d$"), set_start_hour_then_enter_end_hour)],
+            BotStages.END.value: [MessageHandler(filters.Regex("^(?:[01]\\d|2[0-3]):[0-5]\\d$"), set_end_hour_then_end)],
         },
         fallbacks=[CommandHandler("cancel", cancel)],
     )
@@ -178,6 +192,6 @@ def main() -> None:
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
-
+# TODO: Add Error Handlers
 if __name__ == "__main__":
     main()
