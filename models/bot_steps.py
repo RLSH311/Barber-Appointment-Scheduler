@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class BotSteps(Enum):
+    START = 0
     EMAIL = 1
     FREQUENCY = 2
     INTERVAL = 3
